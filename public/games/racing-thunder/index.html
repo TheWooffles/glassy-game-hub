@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing Thunder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #ff6b35;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.6);
+            background: #222;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .speed-meter {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: 2px solid #ff6b35;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid #ff6b35;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 20;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="ui-overlay">
+        <div class="speed-meter">
+            <span>⚡ Speed: <span id="speedValue">0</span> km/h</span>
+        </div>
+        <div>
+            <span>🏁 Score: <span id="scoreValue">0</span></span>
+        </div>
+        <div>
+            <span>⛽ Fuel: <span id="fuelValue">100</span>%</span>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        🏎️ Use Arrow Keys or WASD to steer<br>
+        🎯 Avoid obstacles and collect fuel<br>
+        ⚡ Collect boost items for extra speed
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="game-over" id="gameOver">
+        <h2>🏁 Race Over! 🏁</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <button onclick="restartGame()">Race Again</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = true;
+        let score = 0;
+        let speed = 0;
+        let fuel = 100;
+        let roadOffset = 0;
+        
+        // Player car
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 120,
+            width: 40,
+            height: 80,
+            speed: 5,
+            maxSpeed: 12,
+            acceleration: 0.3,
+            deceleration: 0.2
+        };
+        
+        // Game objects
+        const obstacles = [];
+        const fuelPickups = [];
+        const boostItems = [];
+        const roadLines = [];
+        
+        // Input handling
+        const keys = {};
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        // Initialize road lines
+        for (let i = 0; i < 20; i++) {
+            roadLines.push({
+                y: i * 60 - 600
+            });
+        }
+        
+        // Spawn obstacle
+        function spawnObstacle() {
+            const lanes = [canvas.width * 0.3, canvas.width * 0.5, canvas.width * 0.7];
+            obstacles.push({
+                x: lanes[Math.floor(Math.random() * lanes.length)],
+                y: -50,
+                width: 35,
+                height: 70,
+                speed: 3 + Math.random() * 3
+            });
+        }
+        
+        // Spawn fuel pickup
+        function spawnFuelPickup() {
+            const lanes = [canvas.width * 0.3, canvas.width * 0.5, canvas.width * 0.7];
+            fuelPickups.push({
+                x: lanes[Math.floor(Math.random() * lanes.length)],
+                y: -30,
+                size: 20,
+                speed: 3,
+                pulse: 0
+            });
+        }
+        
+        // Spawn boost item
+        function spawnBoostItem() {
+            const lanes = [canvas.width * 0.3, canvas.width * 0.5, canvas.width * 0.7];
+            boostItems.push({
+                x: lanes[Math.floor(Math.random() * lanes.length)],
+                y: -30,
+                size: 25,
+                speed: 3,
+                rotation: 0
+            });
+        }
+        
+        // Update game
+        function update() {
+            if (!gameRunning) return;
+            
+            // Player movement
+            if (keys['KeyA'] || keys['ArrowLeft']) {
+                player.x -= player.speed;
+            }
+            if (keys['KeyD'] || keys['ArrowRight']) {
+                player.x += player.speed;
+            }
+            if (keys['KeyW'] || keys['ArrowUp']) {
+                speed = Math.min(speed + player.acceleration, player.maxSpeed);
+            } else {
+                speed = Math.max(speed - player.deceleration, 2);
+            }
+            if (keys['KeyS'] || keys['ArrowDown']) {
+                speed = Math.max(speed - player.acceleration, 0);
+            }
+            
+            // Keep player in bounds
+            player.x = Math.max(50, Math.min(canvas.width - 50, player.x));
+            
+            // Update road offset for scrolling effect
+            roadOffset += speed;
+            
+            // Update road lines
+            roadLines.forEach(line => {
+                line.y += speed;
+                if (line.y > canvas.height) {
+                    line.y = -60;
+                }
+            });
+            
+            // Update obstacles
+            obstacles.forEach((obstacle, index) => {
+                obstacle.y += obstacle.speed + speed;
+                
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(index, 1);
+                    score += 10;
+                }
+                
+                // Collision detection
+                if (obstacle.x < player.x + player.width &&
+                    obstacle.x + obstacle.width > player.x &&
+                    obstacle.y < player.y + player.height &&
+                    obstacle.y + obstacle.height > player.y) {
+                    gameOver();
+                }
+            });
+            
+            // Update fuel pickups
+            fuelPickups.forEach((pickup, index) => {
+                pickup.y += pickup.speed + speed;
+                pickup.pulse += 0.2;
+                
+                if (pickup.y > canvas.height) {
+                    fuelPickups.splice(index, 1);
+                }
+                
+                // Collection detection
+                if (pickup.x < player.x + player.width &&
+                    pickup.x + pickup.size > player.x &&
+                    pickup.y < player.y + player.height &&
+                    pickup.y + pickup.size > player.y) {
+                    fuelPickups.splice(index, 1);
+                    fuel = Math.min(fuel + 20, 100);
+                    score += 25;
+                }
+            });
+            
+            // Update boost items
+            boostItems.forEach((boost, index) => {
+                boost.y += boost.speed + speed;
+                boost.rotation += 0.1;
+                
+                if (boost.y > canvas.height) {
+                    boostItems.splice(index, 1);
+                }
+                
+                // Collection detection
+                if (boost.x < player.x + player.width &&
+                    boost.x + boost.size > player.x &&
+                    boost.y < player.y + player.height &&
+                    boost.y + boost.size > player.y) {
+                    boostItems.splice(index, 1);
+                    player.maxSpeed = Math.min(player.maxSpeed + 2, 20);
+                    score += 50;
+                    setTimeout(() => {
+                        player.maxSpeed = Math.max(player.maxSpeed - 2, 12);
+                    }, 3000);
+                }
+            });
+            
+            // Consume fuel
+            fuel -= 0.1 + (speed * 0.01);
+            if (fuel <= 0) {
+                gameOver();
+            }
+            
+            // Spawn new objects
+            if (Math.random() < 0.01 + (speed * 0.001)) spawnObstacle();
+            if (Math.random() < 0.005) spawnFuelPickup();
+            if (Math.random() < 0.003) spawnBoostItem();
+            
+            // Update score
+            score += speed * 0.1;
+            
+            // Update UI
+            document.getElementById('speedValue').textContent = Math.floor(speed * 10);
+            document.getElementById('scoreValue').textContent = Math.floor(score);
+            document.getElementById('fuelValue').textContent = Math.floor(fuel);
+        }
+        
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw road
+            ctx.fillStyle = '#333';
+            ctx.fillRect(canvas.width * 0.2, 0, canvas.width * 0.6, canvas.height);
+            
+            // Draw road edges
+            ctx.fillStyle = '#ff6b35';
+            ctx.fillRect(canvas.width * 0.2, 0, 5, canvas.height);
+            ctx.fillRect(canvas.width * 0.8 - 5, 0, 5, canvas.height);
+            
+            // Draw road lines
+            ctx.fillStyle = '#666';
+            roadLines.forEach(line => {
+                ctx.fillRect(canvas.width * 0.4, line.y, 3, 30);
+                ctx.fillRect(canvas.width * 0.6, line.y, 3, 30);
+            });
+            
+            // Draw fuel pickups
+            fuelPickups.forEach(pickup => {
+                ctx.save();
+                ctx.translate(pickup.x, pickup.y);
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 10 + Math.sin(pickup.pulse) * 5;
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(-pickup.size/2, -pickup.size/2, pickup.size, pickup.size);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('F', 0, 4);
+                ctx.restore();
+            });
+            
+            // Draw boost items
+            boostItems.forEach(boost => {
+                ctx.save();
+                ctx.translate(boost.x, boost.y);
+                ctx.rotate(boost.rotation);
+                ctx.shadowColor = '#ffaa00';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * Math.PI * 2) / 6;
+                    const x = Math.cos(angle) * boost.size / 2;
+                    const y = Math.sin(angle) * boost.size / 2;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+            
+            // Draw obstacles
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = '#cc0000';
+                ctx.fillRect(obstacle.x - obstacle.width/2, obstacle.y, obstacle.width, obstacle.height);
+                ctx.fillStyle = '#ff3333';
+                ctx.fillRect(obstacle.x - obstacle.width/2 + 5, obstacle.y + 5, obstacle.width - 10, obstacle.height - 10);
+            });
+            
+            // Draw player car
+            if (gameRunning) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                
+                // Car body
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                
+                // Car details
+                ctx.fillStyle = '#81C784';
+                ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width - 10, player.height - 10);
+                
+                // Headlights
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-player.width/2 + 5, -player.height/2, 8, 8);
+                ctx.fillRect(player.width/2 - 13, -player.height/2, 8, 8);
+                
+                ctx.restore();
+            }
+            
+            // Draw speed blur effect
+            if (speed > 8) {
+                ctx.save();
+                ctx.globalAlpha = (speed - 8) * 0.1;
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 50; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    ctx.fillRect(x, y, 1, 20 + speed);
+                }
+                ctx.restore();
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = Math.floor(score);
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Restart game
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            speed = 0;
+            fuel = 100;
+            player.x = canvas.width / 2;
+            player.maxSpeed = 12;
+            obstacles.length = 0;
+            fuelPickups.length = 0;
+            boostItems.length = 0;
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
