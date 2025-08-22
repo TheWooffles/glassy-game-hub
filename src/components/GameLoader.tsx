@@ -53,14 +53,12 @@ export const GameLoader = ({ game, isFullscreen, onToggleFullscreen }: GameLoade
   const enterFullscreen = async () => {
     if (containerRef.current) {
       try {
-        if (containerRef.current.requestFullscreen) {
-          await containerRef.current.requestFullscreen();
-        }
+        await containerRef.current.requestFullscreen();
+        onToggleFullscreen();
       } catch (error) {
         console.error('Failed to enter fullscreen:', error);
       }
     }
-    onToggleFullscreen();
   };
 
   const exitFullscreen = async () => {
@@ -68,10 +66,10 @@ export const GameLoader = ({ game, isFullscreen, onToggleFullscreen }: GameLoade
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       }
+      onToggleFullscreen();
     } catch (error) {
       console.error('Failed to exit fullscreen:', error);
     }
-    onToggleFullscreen();
   };
 
   if (hasError) {
