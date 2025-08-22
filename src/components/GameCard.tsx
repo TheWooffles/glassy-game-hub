@@ -16,15 +16,16 @@ export const GameCard = ({ game }: GameCardProps) => {
   };
 
   return (
-    <Card className="group relative overflow-hidden bg-gradient-card backdrop-blur-glass border-glass-border hover:shadow-glow transition-all duration-300 hover:scale-105 cursor-pointer animate-fade-in">
+    <Card className="group relative overflow-hidden bg-gradient-card backdrop-blur-glass border-glass-border hover:shadow-glow transition-all duration-300 hover:scale-105 cursor-pointer animate-fade-in game-container">
       <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       <CardContent className="p-0 relative z-10">
         <div className="aspect-video relative overflow-hidden rounded-t-lg">
           <img
             src={game.thumbnail}
-            alt={game.title}
+            alt={`${game.title} - ${game.description}`}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyNSIgdmlld0JveD0iMCAwIDQwMCAyMjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjI1IiBmaWxsPSJoc2woMjI1IDMwJSA4JSAvIDAuOCkiLz4KPHN2ZyB4PSIxNzUiIHk9Ijg3LjUiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImhzbCgyMTAgNDAlIDk4JSkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz4KPGV4dGVjaGNpcmNsZSBjeD0iOSIgY3k9IjkiIHI9IjIiLz4KPHBhdGggZD0ibTIxIDEzLjUtMS02LjUtMy0xLTIgNi41Ii8+Cjwvc3ZnPgo8L3N2Zz4K';
@@ -32,10 +33,18 @@ export const GameCard = ({ game }: GameCardProps) => {
           />
           
           {game.featured && (
-            <div className="absolute top-3 left-3">
-              <Badge variant="secondary" className="bg-accent text-accent-foreground shadow-accent-glow">
+            <div className="absolute top-3 left-3 z-10">
+              <Badge variant="secondary" className="bg-accent text-accent-foreground shadow-accent-glow animate-glow-pulse">
                 <Star className="w-3 h-3 mr-1 fill-current" />
                 Featured
+              </Badge>
+            </div>
+          )}
+
+          {game.tags.includes('Unity') && (
+            <div className="absolute top-3 right-3 z-10">
+              <Badge variant="outline" className="bg-background-glass/80 backdrop-blur-glass border-glass-border text-foreground">
+                Unity
               </Badge>
             </div>
           )}
@@ -43,7 +52,8 @@ export const GameCard = ({ game }: GameCardProps) => {
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <button
               onClick={handlePlayGame}
-              className="bg-primary text-primary-foreground p-4 rounded-full shadow-glow hover:scale-110 transition-transform duration-200"
+              className="bg-primary text-primary-foreground p-4 rounded-full shadow-glow hover:scale-110 hover:shadow-accent-glow transition-all duration-200 animate-scale-in"
+              aria-label={`Play ${game.title}`}
             >
               <Play className="w-6 h-6 fill-current" />
             </button>
@@ -52,20 +62,23 @@ export const GameCard = ({ game }: GameCardProps) => {
 
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
+            <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
               {game.title}
             </h3>
-            <p className="text-muted-foreground text-sm line-clamp-2">
+            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
               {game.description}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {game.tags.map((tag) => (
+            {game.tags.map((tag, index) => (
               <Badge 
                 key={tag} 
                 variant="outline" 
-                className="text-xs border-glass-border bg-glass-secondary hover:bg-glass-primary transition-colors"
+                className={`text-xs border-glass-border bg-glass-secondary hover:bg-glass-primary transition-all duration-200 animate-fade-in ${
+                  tag === 'Unity' ? 'border-accent/50 text-accent' : ''
+                }`}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {tag}
               </Badge>

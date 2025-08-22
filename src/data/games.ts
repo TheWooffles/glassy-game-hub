@@ -7,7 +7,7 @@ export const gamesData: Game[] = [
     description: 'Navigate through the cosmos and discover new planets in this exciting space adventure.',
     instructions: 'Use WASD or arrow keys to move your spaceship. Collect power-ups and avoid asteroids. Reach the portal to complete each level.',
     thumbnail: '/games/space-explorer/thumbnail.png',
-    tags: ['action', 'adventure', 'space'],
+    tags: ['action', 'adventure', 'space', 'Unity'],
     folder: 'space-explorer',
     featured: true,
   },

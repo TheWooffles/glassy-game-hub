@@ -54,9 +54,10 @@
     --gradient-card: linear-gradient(135deg, hsl(225 25% 12% / 0.8), hsl(225 20% 15% / 0.6));
 
     /* Shadows & Glows */
-    --shadow-glass: 0 8px 32px hsl(225 30% 8% / 0.3);
-    --shadow-glow: 0 0 40px hsl(225 100% 60% / 0.3);
-    --shadow-accent-glow: 0 0 40px hsl(195 100% 60% / 0.3);
+    --shadow-glass: 0 8px 32px hsl(225 30% 8% / 0.4), inset 0 1px 0 hsl(210 40% 98% / 0.1);
+    --shadow-glow: 0 0 40px hsl(225 100% 60% / 0.4), 0 0 80px hsl(225 100% 60% / 0.2);
+    --shadow-accent-glow: 0 0 40px hsl(195 100% 60% / 0.4), 0 0 80px hsl(195 100% 60% / 0.2);
+    --shadow-card: 0 4px 16px hsl(225 30% 8% / 0.3), 0 8px 32px hsl(225 30% 8% / 0.2);
 
     /* Animation */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -94,10 +95,55 @@
   }
   
   .hover-glow {
-    transition: box-shadow 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .hover-glow:hover {
-    box-shadow: 0 0 30px rgba(74, 144, 255, 0.4);
+    box-shadow: 0 0 30px hsl(225 100% 60% / 0.4), 0 0 60px hsl(225 100% 60% / 0.2);
+    transform: translateY(-2px);
+  }
+
+  .game-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, hsl(225 100% 60% / 0.03) 50%, transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .game-container:hover::before {
+    opacity: 1;
+  }
+
+  /* Unity Game Optimizations */
+  .unity-container {
+    background: #000;
+    border-radius: inherit;
+  }
+
+  .unity-container canvas {
+    border-radius: inherit;
+  }
+
+  /* Improved Loading States */
+  .loading-shimmer {
+    background: linear-gradient(90deg, transparent, hsl(225 100% 60% / 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 }

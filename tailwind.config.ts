@@ -77,6 +77,7 @@ export default {
 				'glass': 'var(--shadow-glass)',
 				'glow': 'var(--shadow-glow)',
 				'accent-glow': 'var(--shadow-accent-glow)',
+				'card': 'var(--shadow-card)',
 			},
 			backdropBlur: {
 				'glass': '20px',

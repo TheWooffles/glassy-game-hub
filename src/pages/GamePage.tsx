@@ -2,9 +2,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Maximize, Minimize } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, Loader2 } from 'lucide-react';
 import { gamesData } from '@/data/games';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { GameLoader } from '@/components/GameLoader';
 
 const GamePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -63,51 +64,50 @@ const GamePage = () => {
         </div>
       </header>
 
-      <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'container mx-auto px-4 py-8'}`}>
+      <div className="container mx-auto px-4 py-8">
         {!isFullscreen && (
           <div className="grid lg:grid-cols-3 gap-8 mb-8">
             {/* Game Info */}
-            <Card className="bg-gradient-card backdrop-blur-glass border-glass-border animate-fade-in">
-              <CardHeader>
-                <CardTitle className="text-foreground">{game.title}</CardTitle>
+            <Card className="bg-gradient-card backdrop-blur-glass border-glass-border animate-fade-in shadow-glass">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-foreground text-2xl font-bold">{game.title}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">{game.description}</p>
+              <CardContent className="space-y-6">
+                <p className="text-muted-foreground leading-relaxed">{game.description}</p>
                 
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Instructions:</h4>
-                  <p className="text-sm text-muted-foreground">{game.instructions}</p>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-foreground text-lg">Instructions:</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed bg-glass-secondary/30 p-4 rounded-lg border border-glass-border">
+                    {game.instructions}
+                  </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {game.tags.map((tag) => (
-                    <Badge 
-                      key={tag} 
-                      variant="outline"
-                      className="border-glass-border bg-glass-secondary"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-foreground text-lg">Tags:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {game.tags.map((tag) => (
+                      <Badge 
+                        key={tag} 
+                        variant="outline"
+                        className="border-glass-border bg-glass-secondary/50 hover:bg-glass-primary transition-colors px-3 py-1"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Game Container */}
             <div className="lg:col-span-2">
-              <Card className="bg-gradient-card backdrop-blur-glass border-glass-border animate-fade-in">
-                <CardContent className="p-0">
-                  <div className="aspect-video rounded-lg overflow-hidden">
-                    <iframe
-                      src={`/games/${game.folder}/index.html`}
-                      className="w-full h-full border-0"
-                      title={game.title}
-                      allowFullScreen
-                      onError={() => {
-                        console.error(`Failed to load game: ${game.folder}`);
-                      }}
-                    />
-                  </div>
+              <Card className="group bg-gradient-card backdrop-blur-glass border-glass-border animate-fade-in shadow-glass hover:shadow-glow transition-all duration-300">
+                <CardContent className="p-4">
+                  <GameLoader 
+                    game={game}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={toggleFullscreen}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -115,14 +115,10 @@ const GamePage = () => {
         )}
 
         {isFullscreen && (
-          <iframe
-            src={`/games/${game.folder}/index.html`}
-            className="w-full h-full border-0"
-            title={game.title}
-            allowFullScreen
-            onError={() => {
-              console.error(`Failed to load game: ${game.folder}`);
-            }}
+          <GameLoader 
+            game={game}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
           />
         )}
       </div>
